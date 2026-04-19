@@ -19,7 +19,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from scraper import scrape_matches
+from scraper import scrape_matches, debug_capture
 from executor import place_ticket_on_site
 
 API_TOKEN = os.getenv("API_TOKEN", "")
@@ -58,6 +58,13 @@ def health():
 def matches():
     data = scrape_matches()
     return {"matches": data, "count": len(data), "fetched_at": int(time.time())}
+
+
+@app.get("/debug/raw-xhr", dependencies=[Depends(require_token)])
+def debug_raw_xhr():
+    """Retourne TOUTES les XHR JSON capturées (URL + 1500 premiers caractères du body).
+    Sert à découvrir le vrai format de l'API du site pour adapter le parser."""
+    return debug_capture()
 
 
 @app.post("/place-ticket", dependencies=[Depends(require_token)])
