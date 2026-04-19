@@ -274,3 +274,26 @@ def debug_capture() -> Dict[str, Any]:
         "xhr_count": len(_LAST_DEBUG["captured"]),
         "xhr": _LAST_DEBUG["captured"],
     }
+
+
+def debug_screenshot() -> bytes:
+    """Ouvre TARGET_URL via le proxy configuré et renvoie un PNG plein écran.
+    Permet de voir si Akamai bloque, si un captcha s'affiche, ou si la page se charge."""
+    driver = get_driver()
+    try:
+        driver.get(TARGET_URL)
+        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        time.sleep(5)  # laisser la SPA s'hydrater
+        # Capture full-page
+        try:
+            total_h = driver.execute_script("return document.body.scrollHeight") or 900
+            driver.set_window_size(1366, min(int(total_h), 4000))
+            time.sleep(1)
+        except Exception:
+            pass
+        return driver.get_screenshot_as_png()
+    finally:
+        try:
+            driver.quit()
+        except Exception:
+            pass
