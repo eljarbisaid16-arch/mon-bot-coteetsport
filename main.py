@@ -19,7 +19,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from scraper import scrape_matches, debug_capture
+from scraper import scrape_matches, debug_capture, debug_screenshot
 from executor import place_ticket_on_site
 
 API_TOKEN = os.getenv("API_TOKEN", "")
@@ -65,6 +65,15 @@ def debug_raw_xhr():
     """Retourne TOUTES les XHR JSON capturées (URL + 1500 premiers caractères du body).
     Sert à découvrir le vrai format de l'API du site pour adapter le parser."""
     return debug_capture()
+
+
+@app.get("/debug/screenshot", dependencies=[Depends(require_token)])
+def debug_screenshot_endpoint():
+    """Renvoie une capture PNG (base64) de ce que Chrome headless voit sur TARGET_URL.
+    Indispensable pour diagnostiquer un blocage Akamai/captcha/page blanche."""
+    png = debug_screenshot()
+    b64 = base64.b64encode(png).decode("ascii")
+    return {"image": f"data:image/png;base64,{b64}", "size": len(png)}
 
 
 @app.post("/place-ticket", dependencies=[Depends(require_token)])
